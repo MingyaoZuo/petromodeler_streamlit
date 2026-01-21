@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Streamlit
+.streamlit/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Local exports / archives
+*.zip
+*.xlsx
+
+# Temporary folders created during restores
+_restore_tmp/
+_backup_before_restore/
