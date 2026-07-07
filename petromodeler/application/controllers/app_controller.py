@@ -162,10 +162,7 @@ class AppController:
         g = self.state.get_group(group_id)
         if not g:
             return
-        new_params = dict(params)
-        if new_params != g.params:
-            g.clear_result()
-        g.params = new_params
+        g.params = dict(params)
 
     def clone_group_params(self, source_group_id: str, target_group_id: str) -> None:
         source = self.state.get_group(source_group_id)

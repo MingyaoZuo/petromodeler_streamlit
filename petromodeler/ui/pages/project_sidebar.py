@@ -30,13 +30,48 @@ def _show_project_message() -> None:
         st.info(message)
 
 
-def _save_project_to_server_path(project: ProjectService, project_json: str) -> None:
+def _ask_project_save_path(project: ProjectService) -> Path | None:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    initial_path = _project_save_path(project)
+    if initial_path.exists() and initial_path.is_dir():
+        initial_dir = initial_path
+        initial_file = project.default_filename
+    else:
+        initial_dir = initial_path.parent
+        initial_file = initial_path.name or project.default_filename
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    root.update()
     try:
-        saved_path = project.save_text(project_json, _project_save_path(project))
+        selected = filedialog.asksaveasfilename(
+            parent=root,
+            title="保存项目 JSON",
+            initialdir=str(initial_dir),
+            initialfile=initial_file,
+            defaultextension=".json",
+            filetypes=[("JSON 文件", "*.json"), ("所有文件", "*.*")],
+            confirmoverwrite=True,
+        )
+    finally:
+        root.destroy()
+
+    return Path(selected).expanduser() if selected else None
+
+
+def _save_project_with_dialog(project: ProjectService, project_json: str) -> None:
+    try:
+        selected_path = _ask_project_save_path(project)
+        if selected_path is None:
+            return
+        saved_path = project.save_text(project_json, selected_path)
         st.session_state[PROJECT_SAVE_PATH] = str(saved_path)
-        st.session_state[PROJECT_SAVE_MESSAGE] = ("success", f"Project saved to: {saved_path}")
+        st.session_state[PROJECT_SAVE_MESSAGE] = ("success", f"项目已保存到: {saved_path}")
     except Exception as exc:
-        st.session_state[PROJECT_SAVE_MESSAGE] = ("error", f"Save failed: {exc}")
+        st.session_state[PROJECT_SAVE_MESSAGE] = ("error", f"保存失败: {exc}")
 
 
 def render(
@@ -46,17 +81,8 @@ def render(
 ) -> None:
     with st.sidebar.expander("项目保存/加载", expanded=False):
         project_json = project.dumps(controller.state)
-        st.download_button(
-            label="下载项目 JSON",
-            data=project_json.encode("utf-8"),
-            file_name=project.default_filename,
-            mime="application/json",
-            key="download_project_json",
-        )
-
-        st.text_input("服务器保存路径", value=str(_project_save_path(project)), key=PROJECT_SAVE_PATH)
-        if st.button("保存到服务器路径", key="save_project_to_server_path"):
-            _save_project_to_server_path(project, project_json)
+        if st.button("保存项目 JSON", key="save_project_json", use_container_width=True):
+            _save_project_with_dialog(project, project_json)
 
         _show_project_message()
 

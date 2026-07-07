@@ -159,19 +159,19 @@ class ControllerStateMutationTest(unittest.TestCase):
             [fourth.group_id, first.group_id, third.group_id, second.group_id],
         )
 
-    def test_set_group_params_copies_input_and_clears_stale_result(self) -> None:
+    def test_set_group_params_copies_input_and_preserves_existing_result(self) -> None:
         controller = make_controller()
         group = controller.add_group("Group 1", "fc")
-        group.last_result = object()
-        group.last_error = "old"
+        existing_result = object()
+        group.last_result = existing_result
         payload = {"a": 1}
 
         controller.set_group_params(group.group_id, payload)
         payload["a"] = 2
 
         self.assertEqual(group.params, {"a": 1})
-        self.assertIsNone(group.last_result)
-        self.assertIsNone(group.last_error)
+        self.assertIs(group.last_result, existing_result)
+        self.assertEqual(controller.current_results(), {group.group_id: existing_result})
 
     def test_build_grid_supports_step_mode_for_f(self) -> None:
         controller = make_controller()
