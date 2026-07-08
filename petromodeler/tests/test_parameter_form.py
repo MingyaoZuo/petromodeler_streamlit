@@ -88,6 +88,38 @@ class ParameterFormTest(unittest.TestCase):
         self.assertEqual(calls[0]["step"], 0.1)
         self.assertEqual(calls[0]["format"], "%.2f")
 
+    def test_sr_isotope_ratio_input_uses_step_0_001_and_four_decimals(self) -> None:
+        calls = []
+
+        def number_input(label, **kwargs):
+            calls.append(kwargs)
+            return kwargs["value"]
+
+        fake_st = SimpleNamespace(
+            expander=lambda *args, **kwargs: _DummyExpander(),
+            number_input=number_input,
+            session_state={},
+        )
+        key = ParamKey("G1", "fc", "initial", "iso:melt:ratio:87Sr/86Sr", "IC0")
+        schema = ParameterSchema(
+            specs=[
+                ParameterSpec(
+                    key=key,
+                    label="87Sr/86Sr initial value",
+                    kind="float",
+                    default=0.703,
+                    step=0.1,
+                    group="Isotope params",
+                )
+            ]
+        )
+
+        with patch("petromodeler.ui.widgets.parameter_form.st", fake_st):
+            render_parameter_form(schema, {}, _compute_derived, "G1")
+
+        self.assertEqual(calls[0]["step"], 0.001)
+        self.assertEqual(calls[0]["format"], "%.4f")
+
     def test_changed_parameter_section_stays_expanded_after_rerun(self) -> None:
         expanders = []
 

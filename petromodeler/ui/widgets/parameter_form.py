@@ -43,7 +43,25 @@ ISOTOPE_NUMERIC_FIELDS = {
 }
 
 
+def _is_sr_isotope_ratio_parameter(spec: ParameterSpec) -> bool:
+    if spec.key.name not in ISOTOPE_NUMERIC_FIELDS:
+        return False
+    parts = spec.key.quantity_id.split(":", 3)
+    if len(parts) != 4:
+        return False
+    prefix, _context, kind, symbol = parts
+    return prefix == "iso" and kind == "ratio" and "sr" in symbol.lower()
+
+
+def _float_step(spec: ParameterSpec) -> float:
+    if _is_sr_isotope_ratio_parameter(spec):
+        return 0.001
+    return float(spec.step) if spec.step is not None else 0.1
+
+
 def _float_format(spec: ParameterSpec) -> str | None:
+    if _is_sr_isotope_ratio_parameter(spec):
+        return "%.4f"
     if spec.key.quantity_id.startswith("iso:") and spec.key.name in ISOTOPE_NUMERIC_FIELDS:
         return "%.2f"
     step = spec.step
@@ -110,7 +128,7 @@ def render_parameter_form(
                         value=float(out.get(key_str, spec.default) or 0.0),
                         min_value=spec.min_value,
                         max_value=spec.max_value,
-                        step=float(spec.step) if spec.step is not None else 0.1,
+                        step=_float_step(spec),
                         format=_float_format(spec),
                         key=widget_key,
                         help=spec.help or None,
