@@ -8,6 +8,11 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+import matplotlib
+
+# Streamlit renders figures itself; an interactive desktop backend is neither
+# needed nor available in all deployment environments.
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -88,7 +93,21 @@ class PlotService:
             x_col = axis.x_expr.label()
             y_col = axis.y_expr.label()
             if x_col in df.columns and y_col in df.columns:
-                (line,) = ax.plot(df[x_col].values, df[y_col].values, label=g.name)
+                style = plot_state.curve_styles_by_group.get(g.group_id)
+                line_kwargs: dict[str, Any] = {"label": g.name}
+                if style is not None:
+                    line_kwargs.update(
+                        linestyle=style.line_style,
+                        linewidth=style.line_width,
+                        marker=style.marker or None,
+                    )
+                    if style.line_color:
+                        line_kwargs["color"] = style.line_color
+                    if style.marker_facecolor:
+                        line_kwargs["markerfacecolor"] = style.marker_facecolor
+                    if style.marker_edgecolor:
+                        line_kwargs["markeredgecolor"] = style.marker_edgecolor
+                (line,) = ax.plot(df[x_col].values, df[y_col].values, **line_kwargs)
                 self._draw_selected_points(
                     ax=ax,
                     df=df,
@@ -111,12 +130,25 @@ class PlotService:
                 for key, sub in dfu.groupby(dataset.group_col):
                     if selected_values is not None and str(key) not in selected_values:
                         continue
-                    ax.scatter(sub[dataset.x_col], sub[dataset.y_col], label=str(key), marker="o")
+                    self._draw_dataset_points(
+                        ax,
+                        sub,
+                        dataset.x_col,
+                        dataset.y_col,
+                        str(key),
+                        plot_state,
+                    )
             elif has_xy:
-                ax.scatter(dfu[dataset.x_col], dfu[dataset.y_col], label="Data", marker="o")
+                self._draw_dataset_points(
+                    ax, dfu, dataset.x_col, dataset.y_col, "Data", plot_state
+                )
 
         ax.set_xlabel(axis.x_expr.label())
         ax.set_ylabel(axis.y_expr.label())
+        if plot_state.x_axis_log_scale:
+            ax.set_xscale("log")
+        if plot_state.y_axis_log_scale:
+            ax.set_yscale("log")
         if plot_state.title:
             ax.set_title(plot_state.title)
 
@@ -129,3 +161,22 @@ class PlotService:
         ax.grid(True)
         fig.tight_layout()
         return fig
+
+    @staticmethod
+    def _draw_dataset_points(
+        ax: Any,
+        df: pd.DataFrame,
+        x_col: str,
+        y_col: str,
+        label: str,
+        plot_state: PlotState,
+    ) -> None:
+        style = plot_state.dataset_point_styles_by_label.get(label)
+        scatter_kwargs: dict[str, Any] = {"label": label, "marker": "o"}
+        if style is not None:
+            scatter_kwargs.update(marker=style.marker, s=style.size, linewidths=style.edge_width)
+            if style.facecolor:
+                scatter_kwargs["facecolors"] = style.facecolor
+            if style.edgecolor:
+                scatter_kwargs["edgecolors"] = style.edgecolor
+        ax.scatter(df[x_col], df[y_col], **scatter_kwargs)

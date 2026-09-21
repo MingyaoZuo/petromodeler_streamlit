@@ -9,7 +9,7 @@ from petromodeler.application.services.plot_service import PlotService
 from petromodeler.application.state.axis_state import AxisState
 from petromodeler.application.state.dataset_state import DatasetState
 from petromodeler.application.state.group_state import GroupState
-from petromodeler.application.state.plot_state import PlotState
+from petromodeler.application.state.plot_state import CurveStyle, PlotState, PointStyle
 from petromodeler.domain.common.types import ControlGrid, ControlVarType
 from petromodeler.domain.expressions import Leaf
 from petromodeler.domain.quantities import ElementConc
@@ -104,6 +104,83 @@ class PlotServiceTest(unittest.TestCase):
         ax = fig.axes[0]
         self.assertEqual(len(ax.collections), 1)
         self.assertEqual([text.get_text() for text in ax.texts], ["F=0.5"])
+
+    def test_curve_and_dataset_legend_styles_are_applied(self) -> None:
+        x_expr = Leaf(ElementConc("Sr"))
+        y_expr = Leaf(ElementConc("Nd"))
+        result = GroupRunResult(
+            domain_result=SimulationResult(
+                grid=ControlGrid(ControlVarType.F, pd.Series([1.0, 0.5]).to_numpy()),
+                series_map={},
+            ),
+            detail_table=pd.DataFrame(
+                {x_expr.label(): [10.0, 20.0], y_expr.label(): [1.0, 2.0]}
+            ),
+            x_label=x_expr.label(),
+            y_label=y_expr.label(),
+            model_id="fc",
+            group_id="G1",
+        )
+        state = PlotState(
+            show_dataset=True,
+            curve_styles_by_group={
+                "G1": CurveStyle(
+                    line_color="#112233",
+                    line_style="--",
+                    line_width=2.5,
+                    marker="s",
+                    marker_facecolor="#aabbcc",
+                    marker_edgecolor="#010203",
+                )
+            },
+            dataset_point_styles_by_label={
+                "Data": PointStyle(
+                    marker="D", facecolor="#ff0000", edgecolor="#0000ff", edge_width=2.5, size=64
+                )
+            },
+        )
+
+        fig = PlotService().build_figure(
+            results_by_group={"G1": result},
+            groups=[GroupState(group_id="G1", name="Group1", model_id="fc")],
+            axis=AxisState(x_expr=x_expr, y_expr=y_expr),
+            dataset=DatasetState(
+                df=pd.DataFrame({"x": [4.0], "y": [5.0]}), x_col="x", y_col="y"
+            ),
+            plot_state=state,
+        )
+
+        ax = fig.axes[0]
+        curve = ax.lines[0]
+        points = ax.collections[0]
+        self.assertEqual(curve.get_color(), "#112233")
+        self.assertEqual(curve.get_linestyle(), "--")
+        self.assertEqual(curve.get_marker(), "s")
+        self.assertEqual(curve.get_linewidth(), 2.5)
+        self.assertEqual(points.get_sizes().tolist(), [64])
+        self.assertEqual(points.get_linewidths().tolist(), [2.5])
+
+    def test_selected_axes_use_logarithmic_scale(self) -> None:
+        dataset = DatasetState(
+            df=pd.DataFrame({"x": [1000.0, 2000.0], "y": [3.0, 4.0]}),
+            x_col="x",
+            y_col="y",
+        )
+
+        fig = PlotService().build_figure(
+            results_by_group={},
+            groups=[],
+            axis=AxisState(x_expr=Leaf(ElementConc("Sr")), y_expr=Leaf(ElementConc("Nd"))),
+            dataset=dataset,
+            plot_state=PlotState(
+                show_dataset=True,
+                x_axis_log_scale=True,
+                y_axis_log_scale=False,
+            ),
+        )
+
+        self.assertEqual(fig.axes[0].get_xscale(), "log")
+        self.assertEqual(fig.axes[0].get_yscale(), "linear")
 
 
 if __name__ == "__main__":
