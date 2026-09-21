@@ -6,7 +6,7 @@ from petromodeler.application.state.app_state import AppState
 from petromodeler.application.state.axis_state import AxisState
 from petromodeler.application.state.group_state import GroupState
 from petromodeler.application.state.dataset_state import DatasetState
-from petromodeler.application.state.plot_state import PlotState
+from petromodeler.application.state.plot_state import CurveStyle, PlotState, PointStyle
 from petromodeler.domain.expressions import Leaf
 from petromodeler.domain.quantities import ElementConc, IsotopeValue
 
@@ -31,7 +31,20 @@ class AppStateRoundTripTest(unittest.TestCase):
             group_col="group",
             selected_group_values=["A", "B"],
         )
-        state.plot = PlotState(title="My Plot", show_dataset=False, show_legend=True, annotated_points_by_group={"G1": [1, 3]})
+        state.plot = PlotState(
+            title="My Plot",
+            show_dataset=False,
+            show_legend=True,
+            x_axis_scientific=True,
+            y_axis_scientific=True,
+            annotated_points_by_group={"G1": [1, 3]},
+            curve_styles_by_group={"G1": CurveStyle(line_color="#123456", marker="s")},
+            dataset_point_styles_by_label={
+                "A": PointStyle(
+                    marker="D", facecolor="#abcdef", edgecolor="#010203", edge_width=2.5, size=44
+                )
+            },
+        )
 
         restored = AppState.restore(state.snapshot())
 
@@ -49,7 +62,24 @@ class AppStateRoundTripTest(unittest.TestCase):
         self.assertEqual(restored.plot.title, "My Plot")
         self.assertFalse(restored.plot.show_dataset)
         self.assertTrue(restored.plot.show_legend)
+        self.assertTrue(restored.plot.x_axis_scientific)
+        self.assertTrue(restored.plot.y_axis_scientific)
         self.assertEqual(restored.plot.annotated_points_by_group, {"G1": [1, 3]})
+        self.assertEqual(restored.plot.curve_styles_by_group["G1"].line_color, "#123456")
+        self.assertEqual(restored.plot.curve_styles_by_group["G1"].marker, "s")
+        self.assertEqual(restored.plot.dataset_point_styles_by_label["A"].marker, "D")
+        self.assertEqual(restored.plot.dataset_point_styles_by_label["A"].edge_width, 2.5)
+        self.assertEqual(restored.plot.dataset_point_styles_by_label["A"].size, 44)
+
+    def test_restore_defaults_axis_number_format_for_older_projects(self) -> None:
+        snapshot = AppState().snapshot()
+        snapshot["plot"].pop("x_axis_scientific")
+        snapshot["plot"].pop("y_axis_scientific")
+
+        restored = AppState.restore(snapshot)
+
+        self.assertFalse(restored.plot.x_axis_scientific)
+        self.assertFalse(restored.plot.y_axis_scientific)
 
 
 if __name__ == "__main__":

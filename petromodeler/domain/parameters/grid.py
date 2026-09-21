@@ -48,6 +48,7 @@ def control_grid_key(group_id: str, model_id: str, name: str) -> str:
 
 def control_grid_specs(group_id: str, model_id: str, control_var: ControlVarType) -> list[ParameterSpec]:
     defaults = CONTROL_GRID_DEFAULTS[control_var]
+    grid_step_input_step = 0.01 if control_var == ControlVarType.N else defaults.step
     mode_key = ParamKey(group_id, model_id, "global", "", GRID_MODE)
     min_name = control_grid_value_name(control_var, "min")
     max_name = control_grid_value_name(control_var, "max")
@@ -98,7 +99,7 @@ def control_grid_specs(group_id: str, model_id: str, control_var: ControlVarType
             kind="float",
             default=defaults.step,
             min_value=0.000001,
-            step=defaults.step,
+            step=grid_step_input_step,
             group="Grid",
             visible_if=(mode_key.to_string(), ["By step"]),
         ),

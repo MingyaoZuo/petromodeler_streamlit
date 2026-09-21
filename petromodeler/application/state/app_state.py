@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 from .axis_state import AxisState, default_axis_state
 from .dataset_state import DatasetState
 from .group_state import GroupState
-from .plot_state import PlotState
+from .plot_state import CurveStyle, PlotState, PointStyle
 
 
 @dataclass
@@ -51,7 +51,30 @@ class AppState:
                 "title": self.plot.title,
                 "show_dataset": self.plot.show_dataset,
                 "show_legend": self.plot.show_legend,
+                "x_axis_scientific": self.plot.x_axis_scientific,
+                "y_axis_scientific": self.plot.y_axis_scientific,
                 "annotated_points_by_group": dict(self.plot.annotated_points_by_group),
+                "curve_styles_by_group": {
+                    group_id: {
+                        "line_color": style.line_color,
+                        "line_style": style.line_style,
+                        "line_width": style.line_width,
+                        "marker": style.marker,
+                        "marker_facecolor": style.marker_facecolor,
+                        "marker_edgecolor": style.marker_edgecolor,
+                    }
+                    for group_id, style in self.plot.curve_styles_by_group.items()
+                },
+                "dataset_point_styles_by_label": {
+                    label: {
+                        "marker": style.marker,
+                        "facecolor": style.facecolor,
+                        "edgecolor": style.edgecolor,
+                        "edge_width": style.edge_width,
+                        "size": style.size,
+                    }
+                    for label, style in self.plot.dataset_point_styles_by_label.items()
+                },
             },
             "version": 1,
         }
@@ -93,9 +116,34 @@ class AppState:
             title=pl.get("title", ""),
             show_dataset=pl.get("show_dataset", True),
             show_legend=pl.get("show_legend", True),
+            x_axis_scientific=bool(pl.get("x_axis_scientific", False)),
+            y_axis_scientific=bool(pl.get("y_axis_scientific", False)),
             annotated_points_by_group={
                 str(group_id): [int(i) for i in indices]
                 for group_id, indices in pl.get("annotated_points_by_group", {}).items()
+            },
+            curve_styles_by_group={
+                str(group_id): CurveStyle(
+                    line_color=style.get("line_color"),
+                    line_style=style.get("line_style", "-"),
+                    line_width=float(style.get("line_width", 1.5)),
+                    marker=style.get("marker", ""),
+                    marker_facecolor=style.get("marker_facecolor"),
+                    marker_edgecolor=style.get("marker_edgecolor"),
+                )
+                for group_id, style in pl.get("curve_styles_by_group", {}).items()
+                if isinstance(style, dict)
+            },
+            dataset_point_styles_by_label={
+                str(label): PointStyle(
+                    marker=style.get("marker", "o"),
+                    facecolor=style.get("facecolor"),
+                    edgecolor=style.get("edgecolor"),
+                    edge_width=float(style.get("edge_width", 1.0)),
+                    size=float(style.get("size", 36.0)),
+                )
+                for label, style in pl.get("dataset_point_styles_by_label", {}).items()
+                if isinstance(style, dict)
             },
         )
         return st

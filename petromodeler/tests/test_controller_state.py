@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 
@@ -173,6 +174,25 @@ class ControllerStateMutationTest(unittest.TestCase):
         self.assertIs(group.last_result, existing_result)
         self.assertEqual(controller.current_results(), {group.group_id: existing_result})
 
+    def test_annotation_detail_table_uses_current_grid_when_cached_grid_is_stale(self) -> None:
+        controller = make_controller()
+        controller.registry.register(FCModel())
+        group = controller.add_group("Group 1", "fc")
+        group.params = {
+            ParamKey(group.group_id, "fc", "global", "", "F_min").to_string(): 0.2,
+            ParamKey(group.group_id, "fc", "global", "", "F_max").to_string(): 0.6,
+            ParamKey(group.group_id, "fc", "global", "", "n_points").to_string(): 3,
+            ParamKey(group.group_id, "fc", "global", "", "descending").to_string(): False,
+        }
+        group.last_result = SimpleNamespace(
+            detail_table=pd.DataFrame({"F": [0.2, 0.6], "x": [10.0, 20.0], "y": [1.0, 2.0]})
+        )
+
+        detail_table = controller._annotation_detail_table(group, group.params)
+
+        self.assertIsNotNone(detail_table)
+        self.assertEqual([round(v, 6) for v in detail_table["F"].tolist()], [0.2, 0.4, 0.6])
+
     def test_build_grid_supports_step_mode_for_f(self) -> None:
         controller = make_controller()
         group = controller.add_group("Group 1", "fc")
@@ -230,10 +250,13 @@ class ControllerStateMutationTest(unittest.TestCase):
         controller.set_plot_title("Demo")
         controller.set_plot_show_dataset(False)
         controller.set_plot_show_legend(False)
+        controller.set_plot_axis_scientific(True, False)
 
         self.assertEqual(controller.state.plot.title, "Demo")
         self.assertFalse(controller.state.plot.show_dataset)
         self.assertFalse(controller.state.plot.show_legend)
+        self.assertTrue(controller.state.plot.x_axis_scientific)
+        self.assertFalse(controller.state.plot.y_axis_scientific)
 
     def test_clone_group_params_remaps_group_id_in_keys(self) -> None:
         controller = make_controller()

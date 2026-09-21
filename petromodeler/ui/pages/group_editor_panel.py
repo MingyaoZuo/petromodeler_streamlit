@@ -43,7 +43,11 @@ def render(
 
     spec = controller.model_spec(group.model_id)
 
-    with st.expander(f"{group.name} | {spec.name}", expanded=bool(active_group_id == group.group_id)):
+    # `expanded` is the initial state of a Streamlit expander.  Keep this
+    # value constant so the browser can retain each group's own open/closed
+    # state across widget-triggered reruns.  Using ACTIVE_GROUP_ID here made
+    # editing one group collapse other groups that the user had opened.
+    with st.expander(f"{group.name} | {spec.name}", expanded=False):
         top1, top2, top3, top4, top5, top6, top7, top8 = st.columns(
             [2, 2, 1, 1, 0.65, 0.65, 0.65, 0.65],
             vertical_alignment="bottom",
@@ -133,6 +137,7 @@ def render(
             compute_derived=controller.compute_derived_parameter,
             key_prefix=group.group_id,
             annotation_detail_table=form.annotation_detail_table,
+            annotation_detail_table_factory=lambda values, g=group: controller._annotation_detail_table(g, values),
             annotated_point_indices=controller.state.plot.annotated_points_by_group.get(group.group_id, []),
             on_annotation_points_change=lambda indices, gid=group.group_id: controller.set_group_annotation_points(gid, indices),
         )
