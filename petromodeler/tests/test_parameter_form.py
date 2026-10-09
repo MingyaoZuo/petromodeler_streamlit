@@ -6,6 +6,8 @@ from unittest.mock import patch
 
 import pandas as pd
 
+from petromodeler.domain.common.types import ControlVarType
+from petromodeler.domain.parameters.grid import GRID_STEP, control_grid_specs
 from petromodeler.domain.parameters.keys import ParamKey
 from petromodeler.domain.parameters.specs import ParameterSchema, ParameterSpec
 from petromodeler.ui.session_keys import ACTIVE_GROUP_ID, ACTIVE_PARAMETER_SECTION
@@ -119,6 +121,28 @@ class ParameterFormTest(unittest.TestCase):
 
         self.assertEqual(calls[0]["step"], 0.001)
         self.assertEqual(calls[0]["format"], "%.4f")
+
+    def test_n_grid_step_input_uses_step_0_01_and_two_decimals(self) -> None:
+        calls = []
+
+        def number_input(label, **kwargs):
+            calls.append(kwargs)
+            return kwargs["value"]
+
+        fake_st = SimpleNamespace(
+            expander=lambda *args, **kwargs: _DummyExpander(),
+            number_input=number_input,
+            selectbox=lambda label, options, **kwargs: "By step",
+            session_state={},
+        )
+        schema = ParameterSchema(specs=control_grid_specs("G1", "water_rock", ControlVarType.N))
+
+        with patch("petromodeler.ui.widgets.parameter_form.st", fake_st):
+            render_parameter_form(schema, {}, _compute_derived, "G1")
+
+        grid_step_call = next(call for call in calls if call["key"].endswith(f"|{GRID_STEP}"))
+        self.assertEqual(grid_step_call["step"], 0.01)
+        self.assertEqual(grid_step_call["format"], "%.2f")
 
     def test_changed_parameter_section_stays_expanded_after_rerun(self) -> None:
         expanders = []
@@ -275,6 +299,46 @@ class ParameterFormTest(unittest.TestCase):
         self.assertEqual(multiselect_calls[0][0], "在图上显示并标注的数据点")
         self.assertEqual(multiselect_calls[0][1]["default"], [0])
         self.assertEqual(selected, [1])
+
+    def test_annotation_selector_uses_current_grid_values_after_step_input_change(self) -> None:
+        multiselect_calls = []
+        step_key = ParamKey("G1", "water_rock", "global", "", "grid_step").to_string()
+
+        def number_input(label, **kwargs):
+            if kwargs["key"].endswith("|grid_step"):
+                return 0.03
+            return kwargs["value"]
+
+        def multiselect(label, **kwargs):
+            multiselect_calls.append((label, kwargs))
+            return []
+
+        def annotation_detail_table_factory(current_values):
+            step = current_values[step_key]
+            return pd.DataFrame({"N": [0.0, step, step * 2]})
+
+        fake_st = SimpleNamespace(
+            expander=lambda *args, **kwargs: _DummyExpander(),
+            number_input=number_input,
+            selectbox=lambda label, options, **kwargs: "By step",
+            multiselect=multiselect,
+            session_state={},
+        )
+        schema = ParameterSchema(specs=control_grid_specs("G1", "water_rock", ControlVarType.N))
+
+        with patch("petromodeler.ui.widgets.parameter_form.st", fake_st):
+            render_parameter_form(
+                schema,
+                {step_key: 0.02},
+                _compute_derived,
+                "G1",
+                annotation_detail_table=pd.DataFrame({"N": [0.0, 0.02, 0.04]}),
+                annotation_detail_table_factory=annotation_detail_table_factory,
+                on_annotation_points_change=lambda indices: None,
+            )
+
+        label_for_second_point = multiselect_calls[0][1]["format_func"](1)
+        self.assertIn("N=0.03", label_for_second_point)
 
     def test_annotation_selector_renders_without_detail_table(self) -> None:
         selected = []

@@ -90,6 +90,7 @@ def render_parameter_form(
     compute_derived: Callable[[DerivedSpec, Dict[str, Any]], Optional[float]],
     key_prefix: str,
     annotation_detail_table: Any | None = None,
+    annotation_detail_table_factory: Callable[[Dict[str, Any]], Any | None] | None = None,
     annotated_point_indices: list[int] | None = None,
     on_annotation_points_change: Callable[[list[int]], None] | None = None,
 ) -> Dict[str, Any]:
@@ -187,6 +188,8 @@ def render_parameter_form(
                     st.write(f"[Unsupported spec kind: {spec.kind}] {spec.label}")
 
             if group_name == "Grid" and on_annotation_points_change:
+                if annotation_detail_table_factory:
+                    annotation_detail_table = annotation_detail_table_factory(out)
                 available_indices = list(range(len(annotation_detail_table))) if annotation_detail_table is not None else []
                 current_indices = [i for i in (annotated_point_indices or []) if i in available_indices]
                 selected_indices = st.multiselect(

@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Optional
 
+import numpy as np
 import pandas as pd
 
 from ...domain.models.base import ModelSpec
@@ -20,6 +22,7 @@ from ..state.app_state import AppState
 from ..state.group_state import GroupState
 from ..state.axis_state import AxisState
 from ..state.dataset_state import DatasetState
+from ..state.plot_state import CurveStyle, PointStyle
 from ..services.simulation_service import SimulationService, ValidationReport
 from ..services.plot_service import PlotService
 from ..services.import_service import ImportService
@@ -121,6 +124,8 @@ class AppController:
 
     def delete_group(self, group_id: str) -> None:
         self.state.groups = [g for g in self.state.groups if g.group_id != group_id]
+        self.state.plot.annotated_points_by_group.pop(group_id, None)
+        self.state.plot.curve_styles_by_group.pop(group_id, None)
 
     def move_group(self, group_id: str, offset: int) -> None:
         if offset == 0:
@@ -202,8 +207,11 @@ class AppController:
         )
 
     def _annotation_detail_table(self, group: GroupState, values: Dict[str, Any]) -> Optional[pd.DataFrame]:
-        if group.last_result and group.last_result.detail_table is not None:
-            return group.last_result.detail_table
+        cached_table = (
+            group.last_result.detail_table
+            if group.last_result and group.last_result.detail_table is not None
+            else None
+        )
 
         preview_group = GroupState(
             group_id=group.group_id,
@@ -216,8 +224,20 @@ class AppController:
             model = self.registry.get(group.model_id)
             grid = self.sim.build_grid(model, preview_group)
         except Exception:
-            return None
+            return cached_table
+
+        if cached_table is not None and self._detail_table_matches_grid(cached_table, grid.var.value, grid.values):
+            return cached_table
+
         return pd.DataFrame({grid.var.value: grid.values})
+
+    @staticmethod
+    def _detail_table_matches_grid(detail_table: pd.DataFrame, control_col: str, grid_values) -> bool:
+        if control_col not in detail_table.columns:
+            return False
+        cached_values = detail_table[control_col].to_numpy(dtype=float)
+        current_values = np.asarray(grid_values, dtype=float)
+        return len(cached_values) == len(current_values) and np.allclose(cached_values, current_values)
 
     # ---- Plot ----
     def set_plot_title(self, title: str) -> None:
@@ -228,6 +248,23 @@ class AppController:
 
     def set_plot_show_legend(self, show_legend: bool) -> None:
         self.state.plot.show_legend = bool(show_legend)
+
+<<<<<<< HEAD
+    def set_plot_axis_log_scale(self, x_axis: bool, y_axis: bool) -> None:
+        self.state.plot.x_axis_log_scale = bool(x_axis)
+        self.state.plot.y_axis_log_scale = bool(y_axis)
+=======
+    def set_plot_axis_scientific(self, x_axis: bool, y_axis: bool) -> None:
+        self.state.plot.x_axis_scientific = bool(x_axis)
+        self.state.plot.y_axis_scientific = bool(y_axis)
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
+
+    def set_group_curve_style(self, group_id: str, style: CurveStyle) -> None:
+        if self.state.get_group(group_id) is not None:
+            self.state.plot.curve_styles_by_group[group_id] = style
+
+    def set_dataset_point_style(self, label: str, style: PointStyle) -> None:
+        self.state.plot.dataset_point_styles_by_label[str(label)] = style
 
     def set_group_annotation_points(self, group_id: str, indices: list[int]) -> None:
         if self.state.get_group(group_id) is None:
@@ -245,6 +282,29 @@ class AppController:
 
     def export_grouped_detail_tables_excel(self, grouped_tables) -> bytes:
         return self.exporter.grouped_dataframes_to_single_sheet_excel_bytes(grouped_tables)
+
+    def export_plot(self, figure, image_format: str) -> bytes:
+        return self.exporter.figure_to_image_bytes(figure, image_format)
+
+    def save_plot(self, figure, path: str | Path) -> Path:
+        return self.exporter.figure_to_file(figure, path)
+
+    def save_export_bytes(self, data: bytes, path: str | Path) -> Path:
+        return self.exporter.bytes_to_file(data, path)
+
+    def dataset_plot_labels(self) -> list[str]:
+        dataset = self.state.dataset
+        if not self.state.plot.show_dataset or dataset.df is None or not dataset.x_col or not dataset.y_col:
+            return []
+        if dataset.x_col not in dataset.df.columns or dataset.y_col not in dataset.df.columns:
+            return []
+        if dataset.group_col and dataset.group_col in dataset.df.columns:
+            labels = [str(value) for value in dataset.df[dataset.group_col].dropna().unique()]
+            if dataset.selected_group_values is not None:
+                selected = set(dataset.selected_group_values)
+                labels = [label for label in labels if label in selected]
+            return labels
+        return ["Data"]
 
     # ---- Dataset ----
     def load_dataset_excel(self, file_obj) -> pd.DataFrame:
