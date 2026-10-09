@@ -10,6 +10,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Iterable
 
+import matplotlib as mpl
 import pandas as pd
 
 
@@ -38,12 +39,17 @@ class ExportService:
             raise ValueError(f"Unsupported plot format: {image_format}")
 
         buf = BytesIO()
-        figure.savefig(
-            buf,
-            format=normalized_format,
-            dpi=dpi,
-            bbox_inches="tight",
-        )
+        # Matplotlib's default SVG output converts glyphs into paths.  Keeping
+        # the font type as "none" produces <text> elements that CorelDRAW and
+        # other vector editors can select and edit as text.
+        svg_settings = {"svg.fonttype": "none"} if normalized_format == "svg" else {}
+        with mpl.rc_context(svg_settings):
+            figure.savefig(
+                buf,
+                format=normalized_format,
+                dpi=dpi,
+                bbox_inches="tight",
+            )
         return buf.getvalue()
 
     def figure_to_file(self, figure, path: str | Path, dpi: int = 300) -> Path:

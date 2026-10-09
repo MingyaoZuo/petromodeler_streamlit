@@ -24,6 +24,7 @@ class ExportServiceTest(unittest.TestCase):
 
         self.assertTrue(jpeg.startswith(b"\xff\xd8\xff"))
         self.assertIn(b"<svg", svg)
+        self.assertIn(b"<text", svg)
 
     def test_figure_export_rejects_unknown_format(self) -> None:
         fig, _ = plt.subplots()
@@ -40,7 +41,9 @@ class ExportServiceTest(unittest.TestCase):
             with TemporaryDirectory() as temp_dir:
                 target = ExportService().figure_to_file(fig, Path(temp_dir) / "model.svg")
                 self.assertEqual(target.suffix, ".svg")
-                self.assertIn(b"<svg", target.read_bytes())
+                output = target.read_bytes()
+                self.assertIn(b"<svg", output)
+                self.assertIn(b"<text", output)
         finally:
             plt.close(fig)
 
