@@ -250,22 +250,16 @@ class ControllerStateMutationTest(unittest.TestCase):
         controller.set_plot_title("Demo")
         controller.set_plot_show_dataset(False)
         controller.set_plot_show_legend(False)
-<<<<<<< HEAD
         controller.set_plot_axis_log_scale(True, False)
-=======
         controller.set_plot_axis_scientific(True, False)
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
 
         self.assertEqual(controller.state.plot.title, "Demo")
         self.assertFalse(controller.state.plot.show_dataset)
         self.assertFalse(controller.state.plot.show_legend)
-<<<<<<< HEAD
         self.assertTrue(controller.state.plot.x_axis_log_scale)
         self.assertFalse(controller.state.plot.y_axis_log_scale)
-=======
         self.assertTrue(controller.state.plot.x_axis_scientific)
         self.assertFalse(controller.state.plot.y_axis_scientific)
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
 
     def test_clone_group_params_remaps_group_id_in_keys(self) -> None:
         controller = make_controller()

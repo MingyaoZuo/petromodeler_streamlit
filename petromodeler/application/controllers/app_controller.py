@@ -249,15 +249,13 @@ class AppController:
     def set_plot_show_legend(self, show_legend: bool) -> None:
         self.state.plot.show_legend = bool(show_legend)
 
-<<<<<<< HEAD
     def set_plot_axis_log_scale(self, x_axis: bool, y_axis: bool) -> None:
         self.state.plot.x_axis_log_scale = bool(x_axis)
         self.state.plot.y_axis_log_scale = bool(y_axis)
-=======
+
     def set_plot_axis_scientific(self, x_axis: bool, y_axis: bool) -> None:
         self.state.plot.x_axis_scientific = bool(x_axis)
         self.state.plot.y_axis_scientific = bool(y_axis)
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
 
     def set_group_curve_style(self, group_id: str, style: CurveStyle) -> None:
         if self.state.get_group(group_id) is not None:

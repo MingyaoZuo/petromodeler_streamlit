@@ -1,12 +1,13 @@
 # PetroModeler (Streamlit)
 
-A modular, extensible interactive modeling & plotting tool for 7 geochemical process models:
+A modular, extensible interactive modeling & plotting tool for 8 geochemical process models:
 
 - FC (Fractional crystallization)
 - AFC (Assimilation–fractional crystallization)
 - FCA (Decoupled assimilation–fractional crystallization)
 - MM (Magma mixing)
-- Rayleigh (Rayleigh fractionation)
+- Degassing (original devolatilization calculation)
+- Rayleigh (instantaneous mineral composition during crystallization)
 - Water–Rock reaction (open-system exchange)
 - Mush extraction (crystal–melt separation)
 
@@ -43,3 +44,4 @@ python -m mypy
 
 - The Streamlit UI is intentionally simple but the architecture is designed for extension.
 - Model formulas and parameter meanings are based on the provided `建模方法.md`.
+- Projects saved before the model split (version 1) keep their original Rayleigh groups as Degassing groups on load. Version 2 projects distinguish the two models.

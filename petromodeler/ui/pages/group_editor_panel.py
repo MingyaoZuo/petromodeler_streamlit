@@ -121,6 +121,9 @@ def render(
 
         st.divider()
 
+        if spec.description:
+            st.caption(spec.description)
+
         form = controller.group_parameter_form(group.group_id)
         if form is None:
             return

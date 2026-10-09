@@ -26,6 +26,7 @@ from ..domain.models.afc import AFCModel
 from ..domain.models.fca import FCAModel
 from ..domain.models.mm import MMModel
 from ..domain.models.rayleigh import RayleighModel
+from ..domain.models.degassing import DegassingModel
 from ..domain.models.water_rock import WaterRockModel
 from ..domain.models.mush_extract import MushExtractModel
 
@@ -46,6 +47,7 @@ def build_registry() -> ModelRegistry:
     reg.register(FCAModel())
     reg.register(MMModel())
     reg.register(RayleighModel())
+    reg.register(DegassingModel())
     reg.register(WaterRockModel())
     reg.register(MushExtractModel())
     return reg

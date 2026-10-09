@@ -34,13 +34,10 @@ class PlotState:
     title: str = ""
     show_dataset: bool = True
     show_legend: bool = True
-<<<<<<< HEAD
     x_axis_log_scale: bool = False
     y_axis_log_scale: bool = False
-=======
     x_axis_scientific: bool = False
     y_axis_scientific: bool = False
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
     annotated_points_by_group: Dict[str, List[int]] = field(default_factory=dict)
     curve_styles_by_group: Dict[str, CurveStyle] = field(default_factory=dict)
     dataset_point_styles_by_label: Dict[str, PointStyle] = field(default_factory=dict)

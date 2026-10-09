@@ -145,17 +145,14 @@ class PlotService:
 
         ax.set_xlabel(axis.x_expr.label())
         ax.set_ylabel(axis.y_expr.label())
-<<<<<<< HEAD
         if plot_state.x_axis_log_scale:
             ax.set_xscale("log")
+        elif plot_state.x_axis_scientific:
+            ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0), useMathText=True)
         if plot_state.y_axis_log_scale:
             ax.set_yscale("log")
-=======
-        if plot_state.x_axis_scientific:
-            ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 0), useMathText=True)
-        if plot_state.y_axis_scientific:
+        elif plot_state.y_axis_scientific:
             ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
         if plot_state.title:
             ax.set_title(plot_state.title)
 

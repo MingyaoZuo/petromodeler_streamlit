@@ -160,11 +160,7 @@ class PlotServiceTest(unittest.TestCase):
         self.assertEqual(points.get_sizes().tolist(), [64])
         self.assertEqual(points.get_linewidths().tolist(), [2.5])
 
-<<<<<<< HEAD
     def test_selected_axes_use_logarithmic_scale(self) -> None:
-=======
-    def test_selected_axes_use_scientific_number_format(self) -> None:
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
         dataset = DatasetState(
             df=pd.DataFrame({"x": [1000.0, 2000.0], "y": [3.0, 4.0]}),
             x_col="x",
@@ -178,7 +174,6 @@ class PlotServiceTest(unittest.TestCase):
             dataset=dataset,
             plot_state=PlotState(
                 show_dataset=True,
-<<<<<<< HEAD
                 x_axis_log_scale=True,
                 y_axis_log_scale=False,
             ),
@@ -186,7 +181,21 @@ class PlotServiceTest(unittest.TestCase):
 
         self.assertEqual(fig.axes[0].get_xscale(), "log")
         self.assertEqual(fig.axes[0].get_yscale(), "linear")
-=======
+
+    def test_selected_axes_use_scientific_number_format(self) -> None:
+        dataset = DatasetState(
+            df=pd.DataFrame({"x": [1000.0, 2000.0], "y": [3.0, 4.0]}),
+            x_col="x",
+            y_col="y",
+        )
+
+        fig = PlotService().build_figure(
+            results_by_group={},
+            groups=[],
+            axis=AxisState(x_expr=Leaf(ElementConc("Sr")), y_expr=Leaf(ElementConc("Nd"))),
+            dataset=dataset,
+            plot_state=PlotState(
+                show_dataset=True,
                 x_axis_scientific=True,
                 y_axis_scientific=False,
             ),
@@ -197,7 +206,31 @@ class PlotServiceTest(unittest.TestCase):
         self.assertTrue(x_formatter.get_useMathText())
         self.assertEqual(x_formatter._powerlimits, (0, 0))
         self.assertFalse(y_formatter.get_useMathText())
->>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
+
+    def test_log_scale_and_scientific_settings_can_coexist(self) -> None:
+        for x_log, y_log in ((True, False), (False, True), (True, True)):
+            with self.subTest(x_log=x_log, y_log=y_log):
+                fig = PlotService().build_figure(
+                    results_by_group={},
+                    groups=[],
+                    axis=AxisState(x_expr=Leaf(ElementConc("Sr")), y_expr=Leaf(ElementConc("Nd"))),
+                    dataset=DatasetState(
+                        df=pd.DataFrame({"x": [1000.0, 2000.0], "y": [3.0, 4.0]}),
+                        x_col="x",
+                        y_col="y",
+                    ),
+                    plot_state=PlotState(
+                        x_axis_log_scale=x_log,
+                        y_axis_log_scale=y_log,
+                        x_axis_scientific=True,
+                        y_axis_scientific=True,
+                    ),
+                )
+                ax = fig.axes[0]
+                self.assertEqual(ax.get_xscale(), "log" if x_log else "linear")
+                self.assertEqual(ax.get_yscale(), "log" if y_log else "linear")
+                # Rendering also exercises the selected tick formatters.
+                fig.canvas.draw()
 
 
 if __name__ == "__main__":
