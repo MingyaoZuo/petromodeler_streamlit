@@ -160,7 +160,11 @@ class PlotServiceTest(unittest.TestCase):
         self.assertEqual(points.get_sizes().tolist(), [64])
         self.assertEqual(points.get_linewidths().tolist(), [2.5])
 
+<<<<<<< HEAD
     def test_selected_axes_use_logarithmic_scale(self) -> None:
+=======
+    def test_selected_axes_use_scientific_number_format(self) -> None:
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
         dataset = DatasetState(
             df=pd.DataFrame({"x": [1000.0, 2000.0], "y": [3.0, 4.0]}),
             x_col="x",
@@ -174,6 +178,7 @@ class PlotServiceTest(unittest.TestCase):
             dataset=dataset,
             plot_state=PlotState(
                 show_dataset=True,
+<<<<<<< HEAD
                 x_axis_log_scale=True,
                 y_axis_log_scale=False,
             ),
@@ -181,6 +186,18 @@ class PlotServiceTest(unittest.TestCase):
 
         self.assertEqual(fig.axes[0].get_xscale(), "log")
         self.assertEqual(fig.axes[0].get_yscale(), "linear")
+=======
+                x_axis_scientific=True,
+                y_axis_scientific=False,
+            ),
+        )
+
+        x_formatter = fig.axes[0].xaxis.get_major_formatter()
+        y_formatter = fig.axes[0].yaxis.get_major_formatter()
+        self.assertTrue(x_formatter.get_useMathText())
+        self.assertEqual(x_formatter._powerlimits, (0, 0))
+        self.assertFalse(y_formatter.get_useMathText())
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
 
 
 if __name__ == "__main__":

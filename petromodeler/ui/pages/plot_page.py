@@ -49,6 +49,7 @@ def _render_style_editor(controller: AppController, results: dict) -> None:
         st.markdown("**坐标轴显示**")
         x_axis_column, y_axis_column = st.columns(2)
         with x_axis_column:
+<<<<<<< HEAD
             x_axis_log_scale = st.checkbox(
                 "横坐标使用对数刻度",
                 value=controller.state.plot.x_axis_log_scale,
@@ -61,6 +62,20 @@ def _render_style_editor(controller: AppController, results: dict) -> None:
                 key="plot_y_axis_log_scale",
             )
         controller.set_plot_axis_log_scale(x_axis_log_scale, y_axis_log_scale)
+=======
+            x_axis_scientific = st.checkbox(
+                "横坐标使用指数形式（×10ⁿ）",
+                value=controller.state.plot.x_axis_scientific,
+                key="plot_x_axis_scientific",
+            )
+        with y_axis_column:
+            y_axis_scientific = st.checkbox(
+                "纵坐标使用指数形式（×10ⁿ）",
+                value=controller.state.plot.y_axis_scientific,
+                key="plot_y_axis_scientific",
+            )
+        controller.set_plot_axis_scientific(x_axis_scientific, y_axis_scientific)
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
 
         visible_groups = [
             group

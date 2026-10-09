@@ -35,8 +35,13 @@ class AppStateRoundTripTest(unittest.TestCase):
             title="My Plot",
             show_dataset=False,
             show_legend=True,
+<<<<<<< HEAD
             x_axis_log_scale=True,
             y_axis_log_scale=True,
+=======
+            x_axis_scientific=True,
+            y_axis_scientific=True,
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
             annotated_points_by_group={"G1": [1, 3]},
             curve_styles_by_group={"G1": CurveStyle(line_color="#123456", marker="s")},
             dataset_point_styles_by_label={
@@ -62,8 +67,13 @@ class AppStateRoundTripTest(unittest.TestCase):
         self.assertEqual(restored.plot.title, "My Plot")
         self.assertFalse(restored.plot.show_dataset)
         self.assertTrue(restored.plot.show_legend)
+<<<<<<< HEAD
         self.assertTrue(restored.plot.x_axis_log_scale)
         self.assertTrue(restored.plot.y_axis_log_scale)
+=======
+        self.assertTrue(restored.plot.x_axis_scientific)
+        self.assertTrue(restored.plot.y_axis_scientific)
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
         self.assertEqual(restored.plot.annotated_points_by_group, {"G1": [1, 3]})
         self.assertEqual(restored.plot.curve_styles_by_group["G1"].line_color, "#123456")
         self.assertEqual(restored.plot.curve_styles_by_group["G1"].marker, "s")
@@ -73,6 +83,7 @@ class AppStateRoundTripTest(unittest.TestCase):
 
     def test_restore_defaults_axis_number_format_for_older_projects(self) -> None:
         snapshot = AppState().snapshot()
+<<<<<<< HEAD
         snapshot["plot"].pop("x_axis_log_scale")
         snapshot["plot"].pop("y_axis_log_scale")
 
@@ -80,6 +91,15 @@ class AppStateRoundTripTest(unittest.TestCase):
 
         self.assertFalse(restored.plot.x_axis_log_scale)
         self.assertFalse(restored.plot.y_axis_log_scale)
+=======
+        snapshot["plot"].pop("x_axis_scientific")
+        snapshot["plot"].pop("y_axis_scientific")
+
+        restored = AppState.restore(snapshot)
+
+        self.assertFalse(restored.plot.x_axis_scientific)
+        self.assertFalse(restored.plot.y_axis_scientific)
+>>>>>>> 346f1a5f2b921069ad70fafbe0a4d87cac7f162a
 
 
 if __name__ == "__main__":
